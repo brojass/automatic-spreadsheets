@@ -20,7 +20,7 @@ def find_in_support(ioc_dict):
     :rtype: list
     """
     dependencies_list = []
-    print(ioc_dict)
+    # print(ioc_dict)
     with open(SUPPORT_CSV_FILE) as csv_file:
         csv_reader = csv.reader(csv_file)
         for line in csv_reader:
@@ -29,7 +29,7 @@ def find_in_support(ioc_dict):
 
             for key, value in ioc_dict.items():
                 if key == epics and value == version:
-                    print(epics, version)
+                    # print(epics, version)
                     dependencies_list.append(epics + ' ' + version)
     return dependencies_list
 
@@ -76,14 +76,15 @@ def setup_csv_file(current_file):
         if current_file == CURRENT_CSV_FILE:
             for line in csv_reader:
 
-                if line['maturity'] == 'prod':
+                if line['maturity'] == 'prod' and not re.search(r'.orig$', line['IOC']):
                     # print('IOC: ' + line['IOC'] + ', version:' + line['version'])
                     ioc_dependencies = find_in_ioc(line)
                     if ioc_dependencies:
                         support_present_list = find_in_support(ioc_dependencies)
+                        support_present_list.insert(0, line['IOC'])
                         final_list.append(support_present_list)
                 else:
-                    print('This is not prod maturity: ' + line['maturity'])
+                    print("The IOC", line['IOC'], "aren't compatible")
                     print(line)
     return final_list
 
@@ -109,6 +110,7 @@ def basic_configuration(cl_email, sp_sheet_file):
 
 if __name__ == '__main__':
 
+    sheet_back = ''
     try:
         sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME)
     except gspread.exceptions.SpreadsheetNotFound as e:
@@ -121,13 +123,13 @@ if __name__ == '__main__':
     try:
         for supp_available_list in setup_csv_file(CURRENT_CSV_FILE):
             print(supp_available_list)
+            new_line = supp_available_list
+            index = 1
+            sheet_back.insert_row(new_line, index)
     except FileNotFoundError as e:
         print(e)
         exit(0)
-
-# print(content_back)
-#
-# new_line = ['Anakin', 'Skywalker', 'male', 'Tatooine']
+    # new_line = ['Anakin', 'Skywalker', 'male', 'Tatooine']
 # index = 3
 # sheet.insert_row(new_line,index)
 # sheet.delete_row(4)
