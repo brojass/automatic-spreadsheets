@@ -41,9 +41,10 @@ def find_in_ioc(dict_current_line):
     :param dict_current_line: Specific line of current.csv file that represent the name and version of IOC.
     :type dict_current_line: dict
     :return: Dependencies finded in the given IOC line.
-    :rtype: dict
+    :rtype: tuple
     """
-    ioc_present_dependencies = {}
+    ioc_present_dependencies_dict = {}
+    ioc_present_dependencies_list = []
     ioc = dict_current_line["IOC"]
     version = dict_current_line['version']
     with open(IOC_CSV_FILE, mode='r') as csv_file:
@@ -53,8 +54,9 @@ def find_in_ioc(dict_current_line):
 
                 for key, value in line.items():
                     if not re.search(r'^-', value):
-                        ioc_present_dependencies[key] = value
-    return ioc_present_dependencies
+                        ioc_present_dependencies_dict[key] = value
+                        ioc_present_dependencies_list.append(key + ' ' + value)
+    return ioc_present_dependencies_dict, ioc_present_dependencies_list
 
 
 def setup_csv_file(current_file):
@@ -64,29 +66,33 @@ def setup_csv_file(current_file):
     find_in_support() that iterates over the dependencies find in ioc.csv file.
     :param current_file: current.csv file.
     :type current_file: str
-    :return: A list with all dependencies finded in support.csv file that depend each line of current.csv file.
-    :rtype: list
+    :return: Two list with all dependencies finded on ioc.csv and support.csv files that depend each line of
+    current.csv file.
+    :rtype: tuple
     """
-    # ioc_dependencies = {}
+    # ioc_dependencies_dict = {}
+    # ioc_dependencies_list = []
     # support_present_list = []
-    final_list = []
+    final_ioc_list = []
+    final_support_list = []
     with open(current_file, mode='r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
 
         if current_file == CURRENT_CSV_FILE:
             for line in csv_reader:
 
-                if line['maturity'] == 'prod' and not re.search(r'.orig$', line['IOC']):
+                if line['maturity'] == 'prod' and re.search(r'-cp-ioc$', line['IOC']):
                     # print('IOC: ' + line['IOC'] + ', version:' + line['version'])
-                    ioc_dependencies = find_in_ioc(line)
-                    if ioc_dependencies:
-                        support_present_list = find_in_support(ioc_dependencies)
+                    ioc_dependencies_dict, ioc_dependencies_list = find_in_ioc(line)
+                    if ioc_dependencies_dict and ioc_dependencies_list:
+                        support_present_list = find_in_support(ioc_dependencies_dict)
                         support_present_list.insert(0, line['IOC'])
-                        final_list.append(support_present_list)
+                        final_support_list.append(support_present_list)
+                        final_ioc_list.append(ioc_dependencies_list)
                 else:
                     print("The IOC", line['IOC'], "aren't compatible")
                     print(line)
-    return final_list
+    return final_support_list, final_ioc_list
 
 
 def basic_configuration(cl_email, sp_sheet_file):
@@ -103,7 +109,7 @@ def basic_configuration(cl_email, sp_sheet_file):
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name(cl_email, scope)
     client = gspread.authorize(creds)
-    sheet = client.open(sp_sheet_file).sheet1
+    sheet = client.open(sp_sheet_file)
     content = sheet.get_all_records()
     return sheet, content
 
@@ -111,6 +117,7 @@ def basic_configuration(cl_email, sp_sheet_file):
 if __name__ == '__main__':
 
     sheet_back = ''
+    index = 0
     try:
         sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME)
     except gspread.exceptions.SpreadsheetNotFound as e:
@@ -121,15 +128,18 @@ if __name__ == '__main__':
         print(e)
         exit(0)
     try:
-        for supp_available_list in setup_csv_file(CURRENT_CSV_FILE):
-            print(supp_available_list)
-            new_line = supp_available_list
-            index = 1
+        support_list, ioc_list = setup_csv_file(CURRENT_CSV_FILE)
+        for supp_available in support_list:
+            print(supp_available)
+            new_line = supp_available
+            index += 1
+            sheet_back.insert_row(new_line, index)
+
+        for ioc_dependencies in ioc_list:
+            print(ioc_dependencies)
+            new_line = ioc_dependencies
+            index += 1
             sheet_back.insert_row(new_line, index)
     except FileNotFoundError as e:
         print(e)
         exit(0)
-    # new_line = ['Anakin', 'Skywalker', 'male', 'Tatooine']
-# index = 3
-# sheet.insert_row(new_line,index)
-# sheet.delete_row(4)
