@@ -1,0 +1,10 @@
+IOC,maturity,epics,arch,version,boot
+ag-cp-ioc,prod,R3.14.12.8,RTEMS-mvme3100,1-11,ag-cp-ioc.boot
+ag-cp-ioc.orig,prod,R3.14.12.8,RTEMS-mvme3100,1-10,ag-cp-ioc.boot
+crcs-cp-ioc,prod,R3.14.12.8,RTEMS-mvme2307,2-2,crcs-cp-ioc.boot
+ecs-cp-ioc,prod,R3.14.12.8,RTEMS-mvme2307,1-0-3,ecs-cp-ioc.boot
+gws-cp-ioc,prod,R3.14.12.8,linux-x86_64,1-14,gws-cp-ioc
+labvme7-sbf-ioc,test,,RTEMS-mvme2307,,tcs-cp-ioc.boot
+mcs-cp-ioc,prod,R3.14.12.8,RTEMS-mvme2307,2-3,mcs-cp-ioc.boot
+pcs-cp-ioc,prod,R3.14.12.8,RTEMS-beatnik,5-0,pcs-cp-ioc.boot
+tcs-cp-ioc,prod,R3.14.12.8,RTEMS-mvme2307,2-5-1,tcs-cp-ioc.boot
