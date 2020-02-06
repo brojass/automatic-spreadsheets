@@ -3,7 +3,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import csv
 import re
 
-CLIENT_EMAIL = 'able-imprint-267114-2308e42d58ec.json'
+CLIENT_EMAIL = 'Google sheets ADE automation-9f128e1e2df4.json'
 SPREADSHEET_FILE_NAME = 'Names for automation sheet'
 CURRENT_CSV_FILE = 'current.csv'
 IOC_CSV_FILE = 'ioc.csv'
@@ -142,15 +142,16 @@ def insert_into_spreadsheets(supp, ioc):
 
 if __name__ == '__main__':
 
+    # Read csv files and filter the dependencies available for an IOC
     support_list = []
     ioc_list = []
-
     try:
         support_list, ioc_list = setup_csv_file(CURRENT_CSV_FILE)
     except FileNotFoundError as e:
         print(e)
         exit(0)
 
+    # Insert on SPREADSHEET_FILE_NAME the lists that have the dependencies available for an IOC
     try:
         insert_into_spreadsheets(support_list, ioc_list)
 
