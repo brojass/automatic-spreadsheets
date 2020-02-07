@@ -25,7 +25,6 @@ def find_in_support(ioc_dict):
         for line in csv_reader:
             epics = line[0]
             version = line[1]
-
             for key, value in ioc_dict.items():
                 if key == epics and value == version:
                     dependencies_dict[epics] = version
@@ -120,12 +119,14 @@ def insert_into_spreadsheets(ioc, supp):
     supp_ioc_list = [ioc, supp]
     sheet_position = 0
     column_line = ['IOC']
-
+    row_line = []
+    len_supp = 0
     print(ioc)
 
     for k, v in ioc[0].items():
         if re.search(r'-cp-ioc$', v):
             column_line.append('Epics')
+
         elif k == ' ':
             column_line.append('Version')
         else:
@@ -135,18 +136,33 @@ def insert_into_spreadsheets(ioc, supp):
     # sheet_back.insert_row(column_line, index)
     print(column_line)
 
-    # for ioc_item in ioc:
-    #     print(ioc_item)
-    #     for k, v in ioc_item.items():
-    #         if re.search(r'-cp-ioc$', v):
-    #             print('column:', k, 'row:', v)
-    #         else:
-    #             print('column:', k, 'row:', v)
-    # print('--------------------------')
-    # for supp_item in supp:
-    #     print(supp_item)
-    #     for k, v in supp_item.items():
-    #         print(k, v)
+    for ioc_item in ioc:
+        row_line = []
+        index += 1
+
+        for k, v in ioc_item.items():
+
+            if re.search(r'-cp-ioc$', v):
+                row_line.append(v)
+                row_line.append(k)
+            else:
+                row_line.append(v)
+
+        # sheet_back.insert_row(row_line, index)
+        print(row_line)
+
+    print('--------------------------')
+    column_line = ['IOC', 'Version']
+    print(supp)
+    merge_dic = {}
+    aux_dic = {}
+    for item_supp in supp:
+        merge_dic = {**item_supp, **aux_dic}
+        aux_dic = merge_dic
+    for item in sorted(merge_dic):
+        if not re.search(r'-cp-ioc$', item):
+            column_line.append(item)
+    print(column_line)
 
     # for item_list in supp_ioc_list:
     #     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
