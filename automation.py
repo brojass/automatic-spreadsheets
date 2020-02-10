@@ -19,17 +19,23 @@ def find_in_support(ioc_dict):
     :return: A dictionary with all dependencies finded in support.csv file that depend each IOC of current.csv file.
     :rtype: dict
     """
-    dependencies_dict = {}
-    with open(SUPPORT_CSV_FILE) as csv_file:
-        csv_reader = csv.reader(csv_file)
-        for line in csv_reader:
-            epics = line[0]
-            version = line[1]
-            for key, value in ioc_dict.items():
-                if key == epics and value == version:
-                    dependencies_dict[epics] = version
+    individual_dependencies_dict = {}
+    ioc = ioc_dict['R3.14.12.8']
+    version = ioc_dict[' ']
+    super_key = ioc + ' ' + version
+    supp_line_dict = {}
+    with open(SUPPORT_CSV_FILE, mode='r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
 
-    return dependencies_dict
+        for line in csv_reader:
+            for key, value in ioc_dict.items():
+
+                if line['R3.14.12.8'] == key and line[' '] == value:
+                    supp_line_key = key + ' ' + value
+                    individual_dependencies_dict[supp_line_key] = line
+
+    supp_line_dict[super_key] = individual_dependencies_dict
+    return supp_line_dict
 
 
 def find_in_ioc(dict_current_line):
@@ -79,10 +85,9 @@ def setup_csv_file(current_file):
                     ioc_dependencies_dict = find_in_ioc(line)
                     if ioc_dependencies_dict:
                         support_present_dict = find_in_support(ioc_dependencies_dict)
-                        support_present_dict[line['IOC']] = line['version']
                         final_ioc_list.append(ioc_dependencies_dict)
                         final_supp_list.append(support_present_dict)
-
+    print(final_supp_list)
     return final_ioc_list, final_supp_list
 
 
@@ -121,7 +126,6 @@ def insert_into_spreadsheets(ioc, supp):
     column_line = ['IOC']
     row_line = []
     len_supp = 0
-    print(ioc)
 
     for k, v in ioc[0].items():
         if re.search(r'-cp-ioc$', v):
@@ -151,29 +155,28 @@ def insert_into_spreadsheets(ioc, supp):
         # sheet_back.insert_row(row_line, index)
         print(row_line)
 
-    print('--------------------------')
-    column_line = ['IOC', 'Version']
-    print(supp)
-    merge_dic = {}
-    aux_dic = {}
-    for item_supp in supp:
-        merge_dic = {**item_supp, **aux_dic}
-        aux_dic = merge_dic
-    for item in sorted(merge_dic):
-        if not re.search(r'-cp-ioc$', item):
-            column_line.append(item)
-    print(column_line)
+    for supp_item in supp:
 
-    # for item_list in supp_ioc_list:
-    #     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
-    #     sheet_position += 1
-    #     index = 1
-    #
-    #     for item in item_list:
-    #         print(item)
-    #         new_line = item
-    #         sheet_back.insert_row(new_line, index)
-    #         index += 1
+        for key, value in supp_item.items():
+            print('------------------------')
+            print('IOC: ', key)
+            print('------------------------')
+            for k, v in value.items():
+                print('dependecies:', k)
+                for ke, val in v.items():
+                    print(ke, val)
+
+
+# for item_list in supp_ioc_list:
+#     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+#     sheet_position += 1
+#     index = 1
+#
+#     for item in item_list:
+#         print(item)
+#         new_line = item
+#         sheet_back.insert_row(new_line, index)
+#         index += 1
 
 
 if __name__ == '__main__':
