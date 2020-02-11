@@ -2,6 +2,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
 import re
+from time import sleep
 
 CLIENT_EMAIL = 'Google sheets ADE automation-9f128e1e2df4.json'
 SPREADSHEET_FILE_NAME = 'Names for automation sheet'
@@ -87,7 +88,7 @@ def setup_csv_file(current_file):
                         support_present_dict = find_in_support(ioc_dependencies_dict)
                         final_ioc_list.append(ioc_dependencies_dict)
                         final_supp_list.append(support_present_dict)
-    print(final_supp_list)
+
     return final_ioc_list, final_supp_list
 
 
@@ -121,11 +122,8 @@ def insert_into_spreadsheets(ioc, supp):
     :param ioc: List of dependencies finded on the given IOC lines.
     :type ioc: list
     """
-    supp_ioc_list = [ioc, supp]
     sheet_position = 0
     column_line = ['IOC']
-    row_line = []
-    len_supp = 0
 
     for k, v in ioc[0].items():
         if re.search(r'-cp-ioc$', v):
@@ -135,9 +133,9 @@ def insert_into_spreadsheets(ioc, supp):
             column_line.append('Version')
         else:
             column_line.append(k)
-    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
-    # sheet_back.insert_row(column_line, index)
+    sheet_back.insert_row(column_line, index)
     print(column_line)
 
     for ioc_item in ioc:
@@ -152,19 +150,34 @@ def insert_into_spreadsheets(ioc, supp):
             else:
                 row_line.append(v)
 
-        # sheet_back.insert_row(row_line, index)
+        sheet_back.insert_row(row_line, index)
         print(row_line)
 
-    for supp_item in supp:
+    print('-------------------------------')
+    sleep(100)
+    sheet_position = 1
+    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    index = 1
 
+    for supp_item in supp:
         for key, value in supp_item.items():
-            print('------------------------')
-            print('IOC: ', key)
-            print('------------------------')
+
             for k, v in value.items():
-                print('dependecies:', k)
+                row_line = [key, k]
+                column_line = ['IOC', 'Dependency']
+
                 for ke, val in v.items():
-                    print(ke, val)
+                    if not ke == 'R3.14.12.8':
+                        if not re.search(r'^ ', ke):
+                            column_line.append(ke)
+                            row_line.append(val)
+
+                sheet_back.insert_row(row_line, index)
+                index += 1
+                print(row_line)
+
+    sheet_back.insert_row(column_line, 1)
+    print(column_line)
 
 
 # for item_list in supp_ioc_list:
