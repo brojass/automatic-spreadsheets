@@ -110,6 +110,7 @@ def basic_configuration(cl_email, sp_sheet_file, index_sheet):
     client = gspread.authorize(creds)
     sheet = client.open(sp_sheet_file).get_worksheet(index_sheet)
     content = sheet.get_all_records()
+    sheet.clear()
     return sheet, content
 
 
@@ -133,9 +134,9 @@ def insert_into_spreadsheets(ioc, supp):
             column_line.append('Version')
         else:
             column_line.append(k)
-    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
-    # sheet_back.insert_row(column_line, index)
+    sheet_back.insert_row(column_line, index)
     print(column_line)
 
     for ioc_item in ioc:
@@ -150,16 +151,15 @@ def insert_into_spreadsheets(ioc, supp):
             else:
                 row_line.append(v)
 
-        # sheet_back.insert_row(row_line, index)
+        sheet_back.insert_row(row_line, index)
         print(row_line)
 
     print('-------------------------------')
-    # sleep(100)
     sheet_position = 1
-    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
-
     aux_set = set()
+
     for supp_item in supp:
         for key, value in supp_item.items():
 
@@ -167,37 +167,23 @@ def insert_into_spreadsheets(ioc, supp):
                 column_line = ['Support Package', 'Version']
                 key_val = k.split()
                 row_line = [key_val[0], key_val[1]]
+
                 for ke, val in v.items():
                     if not ke == 'R3.14.12.8':
                         if not re.search('Version', ke):
                             column_line.append(ke)
                             if k not in aux_set:
                                 row_line.append(val)
+
                 sleep(0.5)
                 aux_set.add(k)
                 if not len(row_line) == 2:
-                    # sheet_back.insert_row(row_line, index)
+                    sheet_back.insert_row(row_line, index)
                     index += 1
                     print(key, row_line)
-                else:
-                    print(key, row_line)
 
-    print('set', sorted(aux_set))
-
-    # sheet_back.insert_row(column_line, 1)
+    sheet_back.insert_row(column_line, 1)
     print(column_line)
-
-
-# for item_list in supp_ioc_list:
-#     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
-#     sheet_position += 1
-#     index = 1
-#
-#     for item in item_list:
-#         print(item)
-#         new_line = item
-#         sheet_back.insert_row(new_line, index)
-#         index += 1
 
 
 if __name__ == '__main__':
