@@ -5,7 +5,7 @@ import re
 from time import sleep
 
 CLIENT_EMAIL = 'Google sheets ADE automation-9f128e1e2df4.json'
-SPREADSHEET_FILE_NAME = 'Names for automation sheet'
+SPREADSHEET_FILE_NAME = 'ADE Version Dependencies'
 CURRENT_CSV_FILE = 'current.csv'
 IOC_CSV_FILE = 'ioc.csv'
 SUPPORT_CSV_FILE = 'support.csv'
@@ -22,7 +22,7 @@ def find_in_support(ioc_dict):
     """
     individual_dependencies_dict = {}
     ioc = ioc_dict['R3.14.12.8']
-    version = ioc_dict[' ']
+    version = ioc_dict['Version']
     super_key = ioc + ' ' + version
     supp_line_dict = {}
     with open(SUPPORT_CSV_FILE, mode='r') as csv_file:
@@ -31,7 +31,7 @@ def find_in_support(ioc_dict):
         for line in csv_reader:
             for key, value in ioc_dict.items():
 
-                if line['R3.14.12.8'] == key and line[' '] == value:
+                if line['R3.14.12.8'] == key and line['Version'] == value:
                     supp_line_key = key + ' ' + value
                     individual_dependencies_dict[supp_line_key] = line
 
@@ -55,7 +55,7 @@ def find_in_ioc(dict_current_line):
         csv_reader = csv.DictReader(csv_file)
 
         for line in csv_reader:
-            if line['R3.14.12.8'] == ioc and line[' '] == version:
+            if line['R3.14.12.8'] == ioc and line['Version'] == version:
 
                 for key, value in line.items():
                     ioc_present_dependencies_dict[key] = value
@@ -129,13 +129,13 @@ def insert_into_spreadsheets(ioc, supp):
         if re.search(r'-cp-ioc$', v):
             column_line.append('Epics')
 
-        elif k == ' ':
+        elif k == 'Version':
             column_line.append('Version')
         else:
             column_line.append(k)
-    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
-    sheet_back.insert_row(column_line, index)
+    # sheet_back.insert_row(column_line, index)
     print(column_line)
 
     for ioc_item in ioc:
@@ -150,33 +150,41 @@ def insert_into_spreadsheets(ioc, supp):
             else:
                 row_line.append(v)
 
-        sheet_back.insert_row(row_line, index)
+        # sheet_back.insert_row(row_line, index)
         print(row_line)
 
     print('-------------------------------')
-    sleep(100)
+    # sleep(100)
     sheet_position = 1
-    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
 
+    aux_set = set()
     for supp_item in supp:
         for key, value in supp_item.items():
 
             for k, v in value.items():
-                row_line = [key, k]
-                column_line = ['IOC', 'Dependency']
-
+                column_line = ['Support Package', 'Version']
+                key_val = k.split()
+                row_line = [key_val[0], key_val[1]]
                 for ke, val in v.items():
                     if not ke == 'R3.14.12.8':
-                        if not re.search(r'^ ', ke):
+                        if not re.search('Version', ke):
                             column_line.append(ke)
-                            row_line.append(val)
+                            if k not in aux_set:
+                                row_line.append(val)
+                sleep(0.5)
+                aux_set.add(k)
+                if not len(row_line) == 2:
+                    # sheet_back.insert_row(row_line, index)
+                    index += 1
+                    print(key, row_line)
+                else:
+                    print(key, row_line)
 
-                sheet_back.insert_row(row_line, index)
-                index += 1
-                print(row_line)
+    print('set', sorted(aux_set))
 
-    sheet_back.insert_row(column_line, 1)
+    # sheet_back.insert_row(column_line, 1)
     print(column_line)
 
 
