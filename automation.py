@@ -111,6 +111,7 @@ def basic_configuration(cl_email, sp_sheet_file, index_sheet):
     sheet = client.open(sp_sheet_file).get_worksheet(index_sheet)
     content = sheet.get_all_records()
     sheet.clear()
+    # sheet.get_all_records().sort('Support Package')
     return sheet, content
 
 
@@ -137,6 +138,7 @@ def insert_into_spreadsheets(ioc, supp):
     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     index = 1
     sheet_back.insert_row(column_line, index)
+
     print(column_line)
 
     for ioc_item in ioc:
@@ -157,12 +159,15 @@ def insert_into_spreadsheets(ioc, supp):
     print('-------------------------------')
     sheet_position = 1
     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
-    index = 1
     aux_set = set()
+
+    total_row_line = []
+    supp_package_dict = {}
+    key_list = []
 
     for supp_item in supp:
         for key, value in supp_item.items():
-
+            k_list = []
             for k, v in value.items():
                 column_line = ['Support Package', 'Version']
                 key_val = k.split()
@@ -175,15 +180,53 @@ def insert_into_spreadsheets(ioc, supp):
                             if k not in aux_set:
                                 row_line.append(val)
 
-                sleep(0.5)
                 aux_set.add(k)
                 if not len(row_line) == 2:
-                    sheet_back.insert_row(row_line, index)
-                    index += 1
-                    print(key, row_line)
+                    total_row_line.append(row_line)
+                    key_list.append(k)
+                    # print(key, row_line)
+
+                k_list.append(k)
+            supp_package_dict[key] = k_list
+    # print('-------------------------------')
+
+    dict_test = {}
+    for key in key_list:
+        list_test = []
+        for k, v in supp_package_dict.items():
+            for item in v:
+                if key in item:
+                    list_test.append(k)
+        dict_test[key] = list_test
+
+    # for k, v in dict_test.items():
+    #     print(k, ':', v)
+
+    print('-------------------------------')
+    for column in column_line:
+        if not column:
+            column_line.remove(column)
+            column_line.append('IOC')
+    print(column_line)
 
     sheet_back.insert_row(column_line, 1)
-    print(column_line)
+
+    index = 2
+    for item in sorted(total_row_line):
+        for line in item:
+            if not line:
+                item.remove(line)
+                comparator = item[0] + ' ' + item[1]
+                for key, value in dict_test.items():
+                    if key == comparator:
+                        ioc_sum = ''
+                        for i_o_c in value:
+                            ioc_sum += i_o_c + '|'
+                        item.append(ioc_sum)
+        sleep(0.5)
+        sheet_back.insert_row(item, index)
+        index += 1
+        print(item)
 
 
 if __name__ == '__main__':
@@ -202,7 +245,6 @@ if __name__ == '__main__':
         insert_into_spreadsheets(ioc_list, support_list)
 
     except gspread.exceptions.SpreadsheetNotFound as e:
-        # print(e)
         print('Spreadsheet NotFound: "' + SPREADSHEET_FILE_NAME + '"')
         exit(0)
     except FileNotFoundError as e:
