@@ -156,7 +156,6 @@ def insert_into_spreadsheets(ioc, supp):
         sheet_back.insert_row(row_line, index)
         print(row_line)
 
-    print('-------------------------------')
     sheet_position = 1
     sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
     aux_set = set()
@@ -221,8 +220,9 @@ def insert_into_spreadsheets(ioc, supp):
                     if key == comparator:
                         ioc_sum = ''
                         for i_o_c in value:
-                            ioc_sum += i_o_c + '|'
-                        item.append(ioc_sum)
+                            ioc_sum += i_o_c + ', '
+                        ioc_string = re.sub(r', $', '.', ioc_sum)
+                        item.append(ioc_string)
         sleep(0.5)
         sheet_back.insert_row(item, index)
         index += 1
