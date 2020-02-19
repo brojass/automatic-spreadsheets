@@ -111,58 +111,50 @@ def basic_configuration(cl_email, sp_sheet_file, index_sheet):
     sheet = client.open(sp_sheet_file).get_worksheet(index_sheet)
     content = sheet.get_all_records()
     sheet.clear()
-    # sheet.get_all_records().sort('Support Package')
     return sheet, content
 
 
-def insert_into_spreadsheets(ioc, supp):
+def find_total_ioc_in_supp_package(key_list, supp_package_dict):
     """
-    Function that insert into the SPREADSHEET_FILE_NAME all dependencies finded on ioc.csv and support.csv files that
-    depend each line of current.csv file.
+    This function append the ioc that have the same support package into a dictionary
+    :param key_list: List that represent the support package name and the version in use without duplications.
+    :type key_list: list
+    :param supp_package_dict: Represent the name of the ioc as key and the supports packages names that use as value.
+    :type supp_package_dict: dict
+    :return: Represent the support package name and the version as key. And as value represent each ioc that use the
+    same support package.
+    :rtype: dict
+    """
+    dict_test = {}
+    for key in key_list:
+        list_test = []
+        for k, v in supp_package_dict.items():
+            for item in v:
+                if key in item:
+                    list_test.append(k)
+        dict_test[key] = list_test
+
+    return dict_test
+
+
+def find_supp_package_of_ioc(supp):
+    """
+    Function that iterates over each dictionary inside other dictionary to find which support package it's used by an
+    specific ioc.
     :param supp: List of dependencies existing on the given IOC lines.
     :type supp: list
-    :param ioc: List of dependencies finded on the given IOC lines.
-    :type ioc: list
+    :return:
+    First return as list, the content line of each support package without duplications.
+    Second return as dict, that represent the support package name and the version as key. And as value represent each
+    ioc that use the same support package.
+    And third, return as list the two first column of the support packages worksheet format.
+    :rtype: tuple
     """
-    sheet_position = 0
-    column_line = ['IOC']
-
-    for k, v in ioc[0].items():
-        if re.search(r'-cp-ioc$', v):
-            column_line.append('Epics')
-
-        elif k == 'Version':
-            column_line.append('Version')
-        else:
-            column_line.append(k)
-    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
-    index = 1
-    sheet_back.insert_row(column_line, index)
-
-    print(column_line)
-
-    for ioc_item in ioc:
-        row_line = []
-        index += 1
-
-        for k, v in ioc_item.items():
-
-            if re.search(r'-cp-ioc$', v):
-                row_line.append(v)
-                row_line.append(k)
-            else:
-                row_line.append(v)
-
-        sheet_back.insert_row(row_line, index)
-        print(row_line)
-
-    sheet_position = 1
-    sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, sheet_position)
+    column_line = ''
     aux_set = set()
-
+    key_list = []
     total_row_line = []
     supp_package_dict = {}
-    key_list = []
 
     for supp_item in supp:
         for key, value in supp_item.items():
@@ -187,28 +179,65 @@ def insert_into_spreadsheets(ioc, supp):
 
                 k_list.append(k)
             supp_package_dict[key] = k_list
-    # print('-------------------------------')
+    print(supp_package_dict)
 
-    dict_test = {}
-    for key in key_list:
-        list_test = []
-        for k, v in supp_package_dict.items():
-            for item in v:
-                if key in item:
-                    list_test.append(k)
-        dict_test[key] = list_test
+    dict_test = find_total_ioc_in_supp_package(key_list, supp_package_dict)
 
-    # for k, v in dict_test.items():
-    #     print(k, ':', v)
+    return total_row_line, dict_test, column_line
+
+
+def set_output_format(ioc, supp):
+    """
+    Function that insert into the SPREADSHEET_FILE_NAME all dependencies finded on ioc.csv and support.csv files that
+    depend each line of current.csv file.
+    :param supp: List of dependencies existing on the given IOC lines.
+    :type supp: list
+    :param ioc: List of dependencies finded on the given IOC lines.
+    :type ioc: list
+    """
+    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, 0)
+    column_line = ['IOC']
+
+    for k, v in ioc[0].items():
+        if re.search(r'-cp-ioc$', v):
+            column_line.append('Epics')
+
+        elif k == 'Version':
+            column_line.append('Version')
+        else:
+            column_line.append(k)
+
+    print(column_line)
+    # sheet_back.insert_row(column_line, 1)
+
+    index = 2
+    for ioc_item in ioc:
+        row_line = []
+
+        for k, v in ioc_item.items():
+
+            if re.search(r'-cp-ioc$', v):
+                row_line.append(v)
+                row_line.append(k)
+            else:
+                row_line.append(v)
+
+        # sheet_back.insert_row(row_line, index)
+        index += 1
+        print(row_line)
 
     print('-------------------------------')
+
+    # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, 1)
+    total_row_line, dict_test, column_line = find_supp_package_of_ioc(supp)
+
     for column in column_line:
         if not column:
             column_line.remove(column)
             column_line.append('IOC')
     print(column_line)
 
-    sheet_back.insert_row(column_line, 1)
+    # sheet_back.insert_row(column_line, 1)
 
     index = 2
     for item in sorted(total_row_line):
@@ -223,8 +252,8 @@ def insert_into_spreadsheets(ioc, supp):
                             ioc_sum += i_o_c + ', '
                         ioc_string = re.sub(r', $', '.', ioc_sum)
                         item.append(ioc_string)
-        sleep(0.5)
-        sheet_back.insert_row(item, index)
+        # sleep(0.5)
+        # sheet_back.insert_row(item, index)
         index += 1
         print(item)
 
@@ -242,7 +271,7 @@ if __name__ == '__main__':
 
     # Insert on SPREADSHEET_FILE_NAME the lists that have the dependencies available for an IOC
     try:
-        insert_into_spreadsheets(ioc_list, support_list)
+        set_output_format(ioc_list, support_list)
 
     except gspread.exceptions.SpreadsheetNotFound as e:
         print('Spreadsheet NotFound: "' + SPREADSHEET_FILE_NAME + '"')
