@@ -125,16 +125,16 @@ def find_total_ioc_in_supp_package(key_list, supp_package_dict):
     same support package.
     :rtype: dict
     """
-    dict_test = {}
+    total_ioc_in_supp_package_dict = {}
     for key in key_list:
         list_test = []
         for k, v in supp_package_dict.items():
             for item in v:
                 if key in item:
                     list_test.append(k)
-        dict_test[key] = list_test
+        total_ioc_in_supp_package_dict[key] = list_test
 
-    return dict_test
+    return total_ioc_in_supp_package_dict
 
 
 def find_supp_package_of_ioc(supp):
@@ -144,46 +144,49 @@ def find_supp_package_of_ioc(supp):
     :param supp: List of dependencies existing on the given IOC lines.
     :type supp: list
     :return:
-    First return as list, the content line of each support package without duplications.
-    Second return as dict, that represent the support package name and the version as key. And as value represent each
+    First return as list that represent the header of the worksheet format.
+    Second return as list, the content line of each support package without duplications.
+    And third return as dict, the support package name and the version as key. And as value represent each
     ioc that use the same support package.
-    And third, return as list the two first column of the support packages worksheet format.
     :rtype: tuple
     """
     column_line = ''
     aux_set = set()
-    key_list = []
+    # list used to generate the support package names used as first column of the spreadsheet
+    supp_package_name_used_first_column_list = []
+    # list used to generate the content of the support package used as row on the spreadsheet
     total_row_line = []
     supp_package_dict = {}
 
     for supp_item in supp:
-        for key, value in supp_item.items():
-            k_list = []
-            for k, v in value.items():
+        for key_cp_ioc, ioc_dict in supp_item.items():
+            supp_package_name_used_list = []
+            for key_ioc, supp_dict in ioc_dict.items():
                 column_line = ['Support Package', 'Version']
-                key_val = k.split()
-                row_line = [key_val[0], key_val[1]]
+                split_key_ioc = key_ioc.split()
+                row_line = [split_key_ioc[0], split_key_ioc[1]]
 
-                for ke, val in v.items():
-                    if not ke == 'R3.14.12.8':
-                        if not re.search('Version', ke):
-                            column_line.append(ke)
-                            if k not in aux_set:
-                                row_line.append(val)
+                for key_supp, val_supp in supp_dict.items():
+                    if not key_supp == 'R3.14.12.8':
+                        if not re.search('Version', key_supp):
+                            column_line.append(key_supp)
+                            if key_ioc not in aux_set:
+                                row_line.append(val_supp)
 
-                aux_set.add(k)
+                aux_set.add(key_ioc)
+                # this if prevent duplicates supp package names
                 if not len(row_line) == 2:
                     total_row_line.append(row_line)
-                    key_list.append(k)
+                    supp_package_name_used_first_column_list.append(key_ioc)
                     # print(key, row_line)
 
-                k_list.append(k)
-            supp_package_dict[key] = k_list
-    print(supp_package_dict)
+                supp_package_name_used_list.append(key_ioc)
+            supp_package_dict[key_cp_ioc] = supp_package_name_used_list
 
-    dict_test = find_total_ioc_in_supp_package(key_list, supp_package_dict)
+    total_ioc_in_supp_package_dict = find_total_ioc_in_supp_package(supp_package_name_used_first_column_list,
+                                                                    supp_package_dict)
 
-    return total_row_line, dict_test, column_line
+    return column_line, total_row_line, total_ioc_in_supp_package_dict
 
 
 def set_output_format(ioc, supp):
@@ -201,7 +204,6 @@ def set_output_format(ioc, supp):
     for k, v in ioc[0].items():
         if re.search(r'-cp-ioc$', v):
             column_line.append('Epics')
-
         elif k == 'Version':
             column_line.append('Version')
         else:
@@ -215,7 +217,6 @@ def set_output_format(ioc, supp):
         row_line = []
 
         for k, v in ioc_item.items():
-
             if re.search(r'-cp-ioc$', v):
                 row_line.append(v)
                 row_line.append(k)
@@ -229,7 +230,7 @@ def set_output_format(ioc, supp):
     print('-------------------------------')
 
     # sheet_back, content_back = basic_configuration(CLIENT_EMAIL, SPREADSHEET_FILE_NAME, 1)
-    total_row_line, dict_test, column_line = find_supp_package_of_ioc(supp)
+    column_line, total_row_line, total_ioc_in_supp_package_dict = find_supp_package_of_ioc(supp)
 
     for column in column_line:
         if not column:
@@ -245,7 +246,8 @@ def set_output_format(ioc, supp):
             if not line:
                 item.remove(line)
                 comparator = item[0] + ' ' + item[1]
-                for key, value in dict_test.items():
+
+                for key, value in total_ioc_in_supp_package_dict.items():
                     if key == comparator:
                         ioc_sum = ''
                         for i_o_c in value:
